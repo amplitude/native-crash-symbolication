@@ -1,0 +1,50 @@
+#!/bin/bash
+
+NDK_LIB_FILE=${1:?No library specified.}
+SYMBOLS_DIR=${2:?No output directory specified.}
+
+echo "Extracting $NDK_LIB_FILE to $SYMBOLS_DIR"
+
+NDK_DIR=$(dirname "$NDK_LIB_FILE")
+NDK_LIB=$(basename "$NDK_LIB_FILE")
+EXTRACTED_DIR="$NDK_DIR/$NDK_LIB.extracted"
+
+if [[ ! -e "$EXTRACTED_DIR" ]]
+then
+    mkdir -p "$EXTRACTED_DIR"
+fi
+
+# untar/unzip the file
+tar -xzkf "$NDK_LIB_FILE" -C "$EXTRACTED_DIR"
+
+# dump syms first
+for f in $(find "$EXTRACTED_DIR" -name *.so -type f)
+do
+    echo "Found $(basename $f), dumping syms"
+    dump_syms "$f" > "$f.sym"
+done
+
+for f in $(find "$EXTRACTED_DIR" -name *.sym -type f)
+do
+    echo "Found $(basename $f)"
+    METADATA=($(head -n 1 "$f"))
+    LIB=${METADATA[4]}
+    VERSION=${METADATA[3]}
+
+    SYM_DUMP_DIR="$SYMBOLS_DIR/symbols/$LIB/$VERSION"
+    SYM_DUMP_BACKUP_DIR="$SYMBOLS_DIR/symbols/$LIB/000000000000000000000000000000000"
+    if [[ ! -e "$SYM_DUMP_DIR" ]]
+    then
+        mkdir -p "$SYM_DUMP_DIR"
+    fi
+
+    if [[ ! -e "$SYM_DUMP_BACKUP_DIR" ]]
+    then
+        mkdir -p "$SYM_DUMP_BACKUP_DIR"
+    fi
+
+    cp "$f" "$SYM_DUMP_DIR"
+    mv "$f" "$SYM_DUMP_BACKUP_DIR"
+done
+
+rm -rf "$EXTRACTED_DIR"

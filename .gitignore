@@ -1,0 +1,19 @@
+# ignore temp files
+~*
+
+# ignore pyc files
+*.pyc
+
+# ignore virtualenv
+.env
+
+# other files
+logs/*
+.project
+.pydevproject
+server/public/js/GG/templates
+config.py
+server/deploy_latest.sh
+server/run_prod_server.sh
+server/public/js/gg.js
+decoder/localconfig.py
